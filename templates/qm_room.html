@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Quiz Master Room</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', () => {
+            var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port);
+
+            // Add here the socket.io logic for QM actions
+            // This should include emitting events for starting the timer, selecting cards,
+            // showing bids, and assigning points.
+
+            socket.on('connect', () => {
+                socket.emit('join_room', { 'room': "{{ room_code }}", 'role': 'QM' });
+            });
+
+            // Additional socket.io event listeners and emitters as needed
+        });
+
+        function startRound() {
+            // Emit an event to start the round, including starting the timer
+        }
+
+        function selectCard(card) {
+            // Emit an event to select a card
+        }
+
+        function assignPoints() {
+            // Emit an event to assign points to a winning team
+        }
+
+        // Additional JavaScript functions for QM controls
+    </script>
+</head>
+<body>
+    <h1>Room: {{ room_code }}</h1>
+    <div>
+        <h3>Select a Card</h3>
+        <select onchange="selectCard(this.value)">
+            <!-- Dynamically generate card options -->
+        </select>
+    </div>
+    <div>
+        <button onclick="startRound()">Start Round</button>
+        <button onclick="assignPoints()">Assign Points</button>
+        <!-- Additional QM control buttons -->
+    </div>
+    <div id="bids-dialogue">
+        <!-- Dialogue box for showing bids -->
+    </div>
+</body>
+</html>

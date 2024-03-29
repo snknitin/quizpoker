@@ -7,10 +7,11 @@
     <script type="text/javascript">
         document.addEventListener('DOMContentLoaded', () => {
             var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port);
+            let countdown;
 
             socket.on('connect', () => {
-                // When connected, join the room
-                socket.emit('join', {'username': prompt("Enter your team name:"), 'room': "{{ room_code }}"});
+                const username = prompt("Enter your team name:");
+                socket.emit('join', {'username': username, 'room': "{{ room_code }}"});
             });
 
             socket.on('join_announcement', data => {
@@ -21,22 +22,41 @@
                 alert(data.user + ' placed a bid of ' + data.bid + ' tokens.');
             });
 
-            socket.on('leave_announcement', data => {
-                alert(data.user + ' has left the room.');
+            socket.on('countdown', function(data) {
+                if(countdown) clearInterval(countdown);
+                let timer = data.timer;
+                countdown = setInterval(function() {
+                    document.getElementById('timer').textContent = timer;
+                    timer--;
+                    if(timer < 0) clearInterval(countdown);
+                }, 1000);
             });
 
-            // Example function for placing a bid
+            // Function to place a bid
             window.placeBid = function(bid) {
-                socket.emit('place_bid', {'bid': bid, 'room': "{{ room_code }}", 'username': "YourTeamName"}); // Replace "YourTeamName" with dynamic team names
+                socket.emit('place_bid', {'bid': bid, 'room': "{{ room_code }}", 'username': "YourTeamName"}); // Dynamically handle team names
+            };
+
+            // Functions for the Quiz Master
+            window.quizMasterControls = function(action) {
+                socket.emit('quiz_master_action', {'action': action, 'room': "{{ room_code }}"});
             };
         });
     </script>
 </head>
 <body>
     <h1>Room: {{ room_code }}</h1>
+    <div id="timer">60</div>
     <button onclick="placeBid(10)">Bid 10</button>
     <button onclick="placeBid(20)">Bid 20</button>
     <button onclick="placeBid(30)">Bid 30</button>
-    <!-- Add more buttons as needed -->
+    <!-- Add more bid buttons as needed -->
+
+    <hr>
+    <h2>Quiz Master Controls</h2>
+    <button onclick="quizMasterControls('start')">Start Round</button>
+    <button onclick="quizMasterControls('clear')">Clear Bids</button>
+    <button onclick="quizMasterControls('assign')">Assign Points</button>
+    <!-- Implement the actions for these controls in your Flask-SocketIO backend -->
 </body>
 </html>

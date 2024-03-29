@@ -1,36 +1,40 @@
 from flask import Flask, render_template, request, redirect, url_for
 from flask_socketio import SocketIO, join_room, leave_room, emit
-from random import randint
+from threading import Lock
+import time
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app)
 
-# Placeholder for room storage
-rooms = {}  # Example: {'ROOMCODE': {'teams': {}, 'current_card': None}}
+rooms = {}  # Example structure: {'ROOMCODE': {'teams': {}, 'current_card': None, 'timer': 60}}
+timer_lock = Lock()
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
-@app.route('/create_room', methods=['POST'])
-def create_room():
-    room_code = str(randint(1000, 9999))
-    rooms[room_code] = {'teams': {}, 'current_card': None}
-    return redirect(url_for('room', room_code=room_code))
-
 @app.route('/room/<room_code>')
 def room(room_code):
+    # Simple check to auto-create rooms for this example
     if room_code not in rooms:
-        return "Room not found", 404
+        rooms[room_code] = {'teams': {}, 'current_card': None, 'timer': 60}
     return render_template('room.html', room_code=room_code)
+
+def countdown_timer(room_code):
+    with timer_lock:
+        rooms[room_code]['timer'] = 60
+        while rooms[room_code]['timer'] > 0:
+            time.sleep(1)
+            rooms[room_code]['timer'] -= 1
+            socketio.emit('countdown', {'timer': rooms[room_code]['timer']}, room=room_code)
 
 @socketio.on('join')
 def on_join(data):
     username = data['username']
     room = data['room']
     join_room(room)
-    rooms[room]['teams'][username] = 300  # Every team starts with 300 tokens
+    rooms[room]['teams'][username] = 300  # Initialize with 300 tokens for simplicity
     emit('join_announcement', {'user': username}, room=room)
 
 @socketio.on('place_bid')
@@ -38,12 +42,21 @@ def on_place_bid(data):
     room = data['room']
     bid = data['bid']
     username = data['username']
-    # Simple validation and bid placement
-    if username in rooms[room]['teams'] and isinstance(bid, int) and 0 < bid <= rooms[room]['teams'][username]:
-        rooms[room]['teams'][username] -= bid  # Deduct bid amount from team's tokens
-        emit('bid_placed', {'user': username, 'bid': bid}, room=room)
-    else:
-        emit('error', {'message': 'Invalid bid'}, room=room)
+    # Assume validation and updating of the bid here
+    emit('bid_placed', {'user': username, 'bid': bid}, room=room)
+
+@socketio.on('quiz_master_action')
+def on_quiz_master_action(data):
+    action = data['action']
+    room = data['room']
+    if action == 'start':
+        socketio.start_background_task(countdown_timer, room)
+    elif action == 'clear':
+        # Implement clearing of bids here
+        pass
+    elif action == 'assign':
+        # Implement point assignment logic here
+        pass
 
 @socketio.on('leave')
 def on_leave(data):
@@ -55,4 +68,4 @@ def on_leave(data):
     emit('leave_announcement', {'user': username}, room=room)
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
+    socketio.run(app, debug=True,allow_unsafe_werkzeug=True)
