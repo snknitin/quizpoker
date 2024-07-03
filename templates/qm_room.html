@@ -2,146 +2,35 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>QM Room</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Master Room</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-    <style>
-        #selected-card-image {
-            display: inline-block;
-            vertical-align: top;
-            margin-left: 20px;
-        }
-        table {
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: center;
-        }
-        #bids-dialogue {
-            margin-top: 20px;
-            border: 1px solid #000;
-            padding: 10px;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-    <h1>QM Room: <span id="room-code-display"></span></h1>
-    <button onclick="beginQuiz()">Begin Quiz</button>
-    <select id="card-selector" onchange="selectCard()">
-        <!-- Options for 52 cards will be added here -->
-    </select>
-    <h3>Timer: <span id="timer">60</span> seconds</h3>
-    <div id="selected-card-image"></div>
-
-    <div id="participants">
-        <table id="participants-table">
-            <tr id="team-names"><th>Team Names</th></tr>
-            <tr id="team-tokens"><td>Tokens</td></tr>
-        </table>
+    <h1>Quiz Master Room</h1>
+    <p>Room Code: <span id="room-code">{{ room }}</span></p>
+    <div>
+        <select id="card-select">
+            <option value="">Select a card</option>
+            <option value="ace_of_spades">Ace of Spades</option>
+            <!-- Add more card options here -->
+        </select>
+        <button id="select-card-btn">Select Card</button>
+    </div>
+    <div>
+        <button id="refresh-round-btn">Refresh Round</button>
+        <button id="clear-inputs-btn">Clear Inputs</button>
+    </div>
+    <div id="timer">Time left: <span id="time-left">60</span> seconds</div>
+    <div id="current-card"></div>
+    <div id="bids-container"></div>
+    <div id="winner-selection" style="display: none;">
+        <h3>Select Winner:</h3>
+        <select id="winner-select"></select>
+        <button id="confirm-winner-btn">Confirm Winner</button>
     </div>
 
-    <button onclick="startRound()">Start Round</button>
-    <button onclick="finalizeBids()">Finalize Bids</button>
-    <button onclick="clearBids()">Clear Bids</button>
-
-    <div id="bids-dialogue">
-        <table>
-            <thead>
-                <tr>
-                    <th>Team Name</th>
-                    <th>Bid Amount</th>
-                    <th>Time Elapsed</th>
-                </tr>
-            </thead>
-            <tbody id="bids-table-body"></tbody>
-        </table>
-    </div>
-    <p>Total Sum of Bids: <span id="total-bids-sum">0</span></p>
-
-    <select id="winner-selector">
-        <!-- Team names will be added here -->
-    </select>
-    <button onclick="assignWinner()">Assign Winner</button>
-
-    <script type="text/javascript">
-        var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port);
-        var roomCode = sessionStorage.getItem('roomCode');
-        document.getElementById('room-code-display').textContent = roomCode;
-
-        socket.emit('join_room', {'room': roomCode, 'role': 'QM'});
-
-        socket.on('update_participants', function(data) {
-            updateParticipantsTable(data.teams);
-        });
-
-        socket.on('update_bids', function(data) {
-            const tbody = document.getElementById('bids-table-body');
-            tbody.innerHTML = '';
-            let totalSum = 0;
-            data.bids.forEach(bid => {
-                const row = tbody.insertRow();
-                row.insertCell(0).textContent = bid.teamName;
-                row.insertCell(1).textContent = bid.bid;
-                row.insertCell(2).textContent = `${bid.timeElapsed} seconds`;
-                totalSum += bid.bid;
-            });
-            document.getElementById('total-bids-sum').textContent = totalSum;
-        });
-
-        function beginQuiz() {
-            // Lock room from new participants
-            socket.emit('lock_room', {'room': roomCode});
-        }
-
-        function selectCard() {
-            const card = document.getElementById('card-selector').value;
-            document.getElementById('selected-card-image').innerHTML = `<img src="/path/to/cards/${card}.png" alt="Card">`;
-            socket.emit('select_card', {'room': roomCode, 'card': card});
-        }
-
-        function startRound() {
-            socket.emit('start_round', {'room': roomCode});
-        }
-
-        function finalizeBids() {
-            socket.emit('finalize_bids', {'room': roomCode});
-        }
-
-        function clearBids() {
-            socket.emit('clear_bids', {'room': roomCode});
-        }
-
-        function assignWinner() {
-            const winner = document.getElementById('winner-selector').value;
-            socket.emit('assign_winner', {'room': roomCode, 'winner': winner});
-        }
-
-        function updateParticipantsTable(teams) {
-            const namesRow = document.getElementById('team-names');
-            const tokensRow = document.getElementById('team-tokens');
-            namesRow.innerHTML = '<th>Team Names</th>';
-            tokensRow.innerHTML = '<td>Tokens</td>';
-            for (let team in teams) {
-                let th = document.createElement('th');
-                th.textContent = team;
-                namesRow.appendChild(th);
-
-                let td = document.createElement('td');
-                td.textContent = teams[team].tokens;
-                tokensRow.appendChild(td);
-
-                // Update winner-selector options
-                let option = document.createElement('option');
-                option.value = team;
-                option.textContent = team;
-                document.getElementById('winner-selector').appendChild(option);
-            }
-        }
-    </script>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>

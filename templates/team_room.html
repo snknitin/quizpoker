@@ -2,117 +2,32 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Team Room</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-    <style>
-        #bids-dialogue {
-            margin-top: 20px;
-            border: 1px solid #000;
-            padding: 10px;
-            max-height: 200px;
-            overflow-y: scroll;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            border: 1px solid black;
-            padding: 8px;
-            text-align: left;
-        }
-    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-    <h1>Team Room: <span id="room-code-display"></span></h1>
-    <h3>Team Name: <span id="team-name"></span></h3>
-    <h3>Current Tokens: <span id="current-tokens">300</span></h3>
-    <h3>Timer: <span id="timer">60</span> seconds</h3>
-    <div id="selected-card-image"></div>
-    <div>
-        <button onclick="placeBid(12)">Bid 12</button>
-        <button onclick="placeBid(20)">Bid 20</button>
-        <button onclick="placeBid(30)">Bid 30</button>
-        <button onclick="placeBid(50)">Bid 50</button>
-        <button onclick="promptCustomBid()">Custom Bid</button>
+    <h1>Team Room</h1>
+    <p>Room Code: <span id="room-code">{{ room }}</span></p>
+    <p>Team: <span id="team-name"></span></p>
+    <p>Tokens: <span id="tokens"></span></p>
+    <div id="timer">Time left: <span id="time-left">60</span> seconds</div>
+    <div id="current-card"></div>
+    <div id="bid-buttons">
+        <button class="bid-btn" data-value="10">10</button>
+        <button class="bid-btn" data-value="20">20</button>
+        <button class="bid-btn" data-value="30">30</button>
+        <button class="bid-btn" data-value="50">50</button>
+        <button class="bid-btn" data-value="70">70</button>
+        <button class="bid-btn" data-value="100">100</button>
+        <input type="number" id="custom-bid" placeholder="Custom bid">
+        <button id="custom-bid-btn">Place Custom Bid</button>
     </div>
-    <div id="bids-dialogue">
-        <h4>Bids Dialogue Box</h4>
-        <table>
-            <thead>
-                <tr>
-                    <th>Team Name</th>
-                    <th>Latest Bid</th>
-                    <th>Time Elapsed</th>
-                </tr>
-            </thead>
-            <tbody id="bids-table-body">
-                <!-- Bids will be populated here -->
-            </tbody>
-        </table>
-    </div>
+    <div id="current-bid">Current Bid: <span id="bid-amount">0</span></div>
+    <div id="bids-container"></div>
+    <div id="round-result"></div>
 
-    <script type="text/javascript">
-        var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port);
-        var teamName = sessionStorage.getItem('teamName');
-        var roomCode = sessionStorage.getItem('roomCode');
-        document.getElementById('team-name').textContent = teamName;
-        document.getElementById('room-code-display').textContent = roomCode;
-
-        socket.emit('join_room', {'room': roomCode, 'teamName': teamName});
-
-        socket.on('update_timer', function(data) {
-            document.getElementById('timer').textContent = data.timer;
-            if(data.timer <= 0) {
-                disableBidButtons(true);
-            }
-        });
-
-        socket.on('start_round', function(data) {
-            disableBidButtons(false);
-        });
-
-        function disableBidButtons(disabled) {
-            const bidButtons = document.querySelectorAll('button');
-            bidButtons.forEach(button => {
-                if (button.textContent.includes('Bid') || button.textContent === 'Custom Bid') {
-                    button.disabled = disabled;
-                }
-            });
-        }
-
-        socket.on('update_tokens', function(data) {
-            document.getElementById('current-tokens').textContent = data.tokens;
-        });
-
-        socket.on('show_selected_card', function(data) {
-            document.getElementById('selected-card-image').innerHTML = `<img src="/path/to/cards/${data.card}.png" alt="Card">`;
-        });
-
-        socket.on('update_bids', function(data) {
-            const tbody = document.getElementById('bids-table-body');
-            tbody.innerHTML = ''; // Clear existing rows
-            data.bids.forEach(bid => {
-                const row = tbody.insertRow();
-                row.insertCell(0).textContent = bid.teamName;
-                row.insertCell(1).textContent = bid.bid;
-                row.insertCell(2).textContent = `${bid.timeElapsed} seconds`;
-            });
-        });
-
-        function placeBid(amount) {
-            socket.emit('place_bid', {'room': roomCode, 'teamName': teamName, 'bid': amount});
-        }
-
-        function promptCustomBid() {
-            const bid = prompt("Enter your bid amount:");
-            const bidAmount = parseInt(bid, 10);
-            if (!isNaN(bidAmount) && bidAmount > 0) {
-                placeBid(bidAmount);
-            } else {
-                alert('Invalid bid. Please enter a positive integer.');
-            }
-        }
-    </script>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>

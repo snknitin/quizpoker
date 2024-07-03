@@ -2,30 +2,24 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Quiz Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Bidding App</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-    <h2>Create or Join a Room</h2>
-    <div>
-        <h3>Create a New Room (Quiz Master)</h3>
-        <button onclick="createRoom()">Create Room</button>
+    <h1>Real-time Bidding App</h1>
+    <div id="create-room">
+        <h2>Create a Room (Quiz Master)</h2>
+        <button id="create-room-btn">Create Room</button>
     </div>
-    <div>
-        <h3>Join as a Team</h3>
-        <input type="text" id="room_code" placeholder="Room Code" required>
-        <button onclick="joinRoom()">Join Room</button>
+    <div id="join-room">
+        <h2>Join a Room (Team)</h2>
+        <input type="text" id="room-code" placeholder="Enter room code">
+        <input type="text" id="team-name" placeholder="Enter team name">
+        <button id="join-room-btn">Join Room</button>
     </div>
-    <script>
-        function createRoom() {
-            // Redirect to server-side route that creates a room and redirects to the QM view
-            window.location.href = `/create_room`;
-        }
 
-        function joinRoom() {
-            const roomCode = document.getElementById('room_code').value;
-            // Redirect to the team view of the room
-            window.location.href = `/room/${roomCode}`;
-        }
-    </script>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>
