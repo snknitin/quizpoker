@@ -5,6 +5,25 @@ Creating an interactive setup for hosting the quiz poker format that incorporate
 
 This is a real-time bidding application for quiz games, featuring a Quiz Master interface and Team Player interfaces.
 
+### Directory Structure
+
+```
+project_root/
+│
+├── app.py
+├── requirements.txt
+├── static/
+│   ├── style.css
+│   └── script.js
+├── templates/
+│   ├── index.html
+│   ├── qm_room.html
+│   └── team_room.html
+└── README.md
+
+```
+
+
 ## Setup
 
 1. Clone this repository
