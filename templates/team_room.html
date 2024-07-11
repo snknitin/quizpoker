@@ -4,30 +4,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Team Room</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1>Team Room</h1>
-    <p>Room Code: <span id="room-code">{{ room }}</span></p>
-    <p>Team: <span id="team-name"></span></p>
-    <p>Tokens: <span id="tokens"></span></p>
-    <div id="timer">Time left: <span id="time-left">60</span> seconds</div>
-    <div id="current-card"></div>
-    <div id="bid-buttons">
-        <button class="bid-btn" data-value="10">10</button>
-        <button class="bid-btn" data-value="20">20</button>
-        <button class="bid-btn" data-value="30">30</button>
-        <button class="bid-btn" data-value="50">50</button>
-        <button class="bid-btn" data-value="70">70</button>
-        <button class="bid-btn" data-value="100">100</button>
-        <input type="number" id="custom-bid" placeholder="Custom bid">
-        <button id="custom-bid-btn">Place Custom Bid</button>
+    <div class="container">
+        <h1>Quiz Room: <span id="room-code">{{ room }}</span></h1>
+        <h2>Team: <span id="team-name"></span></h2>
+        <div class="grey-box">
+            <div id="selected-card"></div>
+            <div id="card-worth"></div>
+            <div id="timer">
+                <span id="time-left">75</span> secs left
+            </div>
+        </div>
+        <div class="grey-box">
+            <h2>Teams</h2>
+            <div id="teams-list"></div>
+        </div>
+        <div class="grey-box">
+            <h2>Bids</h2>
+            <div id="bids-list"></div>
+        </div>
+        <div class="grey-box">
+            <h2>Place Bid</h2>
+            <div id="bid-buttons">
+                <button class="btn btn-orange bid-amount" data-amount="10">10</button>
+                <button class="btn btn-orange bid-amount" data-amount="20">20</button>
+                <button class="btn btn-orange bid-amount" data-amount="30">30</button>
+                <button class="btn btn-orange bid-amount" data-amount="50">50</button>
+                <button class="btn btn-orange bid-amount" data-amount="75">75</button>
+                <button class="btn btn-orange bid-amount" data-amount="100">100</button>
+                <input type="number" id="custom-bid" placeholder="Custom bid">
+            </div>
+            <button id="place-bid" class="btn btn-green">Place Bid</button>
+        </div>
     </div>
-    <div id="current-bid">Current Bid: <span id="bid-amount">0</span></div>
-    <div id="bids-container"></div>
-    <div id="round-result"></div>
-
-    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
