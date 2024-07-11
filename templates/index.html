@@ -3,23 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Real-time Bidding App</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <title>KC Hold'Em Quiz Poker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1>Real-time Bidding App</h1>
-    <div id="create-room">
-        <h2>Create a Room (Quiz Master)</h2>
-        <button id="create-room-btn">Create Room</button>
+    <div class="container">
+        <h1>Welcome to KC Hold'Em Quiz Poker</h1>
+        <div class="grey-box">
+            <button id="create-room" class="btn btn-green">Create Room as QM</button>
+            <div class="divider">OR</div>
+            <input type="text" id="room-id" placeholder="Enter Room ID">
+            <input type="text" id="team-name" placeholder="Enter Team Name">
+            <button id="join-room" class="btn btn-orange">Join Room</button>
+        </div>
     </div>
-    <div id="join-room">
-        <h2>Join a Room (Team)</h2>
-        <input type="text" id="room-code" placeholder="Enter room code">
-        <input type="text" id="team-name" placeholder="Enter team name">
-        <button id="join-room-btn">Join Room</button>
-    </div>
-
-    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

@@ -4,33 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quiz Master Room</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1>Quiz Master Room</h1>
-    <p>Room Code: <span id="room-code">{{ room }}</span></p>
-    <div>
-        <select id="card-select">
-            <option value="">Select a card</option>
-            <option value="ace_of_spades">Ace of Spades</option>
-            <!-- Add more card options here -->
-        </select>
-        <button id="select-card-btn">Select Card</button>
+    <div class="container">
+        <h1>Quiz Room: <span id="room-code">{{ room }}</span></h1>
+        <div class="grey-box">
+            <div id="card-selection">
+                <select id="card-dropdown">
+                    <option value="">Select a card</option>
+                    <!-- Card options will be populated by JavaScript -->
+                </select>
+                <div id="selected-card"></div>
+                <div id="card-worth"></div>
+            </div>
+            <div id="timer">
+                <input type="number" id="custom-time" value="75" min="1">
+                <button id="start-timer" class="btn btn-blue">Start Timer</button>
+                <span id="time-left">75</span> secs left
+            </div>
+        </div>
+        <div class="grey-box">
+            <h2>Teams</h2>
+            <div id="teams-list"></div>
+        </div>
+        <div class="grey-box">
+            <h2>Bids</h2>
+            <div id="bids-list"></div>
+        </div>
+        <div class="grey-box">
+            <h2>Priority Table</h2>
+            <div id="priority-table"></div>
+        </div>
+        <button id="get-priority" class="btn btn-blue">Get Priority</button>
+        <button id="assign-winner" class="btn btn-green">Assign Winner</button>
+        <button id="clear-round" class="btn btn-orange">Clear</button>
     </div>
-    <div>
-        <button id="refresh-round-btn">Refresh Round</button>
-        <button id="clear-inputs-btn">Clear Inputs</button>
-    </div>
-    <div id="timer">Time left: <span id="time-left">60</span> seconds</div>
-    <div id="current-card"></div>
-    <div id="bids-container"></div>
-    <div id="winner-selection" style="display: none;">
-        <h3>Select Winner:</h3>
-        <select id="winner-select"></select>
-        <button id="confirm-winner-btn">Confirm Winner</button>
-    </div>
-
-    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
