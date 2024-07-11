@@ -1,0 +1,78 @@
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+}
+
+.container {
+    width: 80%;
+    margin: auto;
+    overflow: hidden;
+    padding: 20px;
+}
+
+.grey-box {
+    background-color: #e0e0e0;
+    border: 1px solid #000;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    margin: 5px;
+}
+
+.btn-green {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.btn-orange {
+    background-color: #FF9800;
+    color: white;
+}
+
+.btn-blue {
+    background-color: #2196F3;
+    color: white;
+}
+
+input[type="text"], input[type="number"], select {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+}
+
+.divider {
+    text-align: center;
+    margin: 20px 0;
+    font-weight: bold;
+}
+
+#bids-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.late-bid {
+    color: red;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+table, th, td {
+    border: 1px solid black;
+    padding: 5px;
+    text-align: left;
+}
