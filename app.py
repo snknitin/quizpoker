@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 from flask_socketio import SocketIO, join_room, emit
 import random
 import string
@@ -29,13 +29,13 @@ def index():
 @app.route('/qm/<room>')
 def qm_room(room):
     if room not in rooms:
-        return "Room not found", 404
+        return redirect(url_for('index'))
     return render_template('qm_room.html', room=room)
 
 @app.route('/team/<room>')
 def team_room(room):
     if room not in rooms:
-        return "Room not found", 404
+        return redirect(url_for('index'))
     return render_template('team_room.html', room=room)
 
 @socketio.on('create_room')
@@ -61,9 +61,10 @@ def on_join_room(data):
         if team not in rooms[room]['teams']:
             rooms[room]['teams'][team] = 300  # Initial tokens
         join_room(room)
-        emit('room_joined', {'team': team, 'tokens': rooms[room]['teams'][team], 'teams': rooms[room]['teams']}, room=room)
+        emit('room_joined', {'room': room, 'team': team, 'tokens': rooms[room]['teams'][team], 'teams': rooms[room]['teams']}, room=room)
     else:
         emit('error', {'message': 'Room not found'})
+
 
 @socketio.on('select_card')
 def on_select_card(data):

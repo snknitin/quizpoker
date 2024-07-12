@@ -3,15 +3,21 @@ let room, team, isQM;
 
 function updateTeamsList(teams) {
     const teamsList = document.getElementById('teams-list');
-    teamsList.innerHTML = '';
-    for (const [teamName, tokens] of Object.entries(teams)) {
-        teamsList.innerHTML += `<div>${teamName}: ${tokens} tokens</div>`;
+    if (teamsList) {
+        teamsList.innerHTML = '';
+        for (const [teamName, tokens] of Object.entries(teams)) {
+            teamsList.innerHTML += `<div>${teamName}: ${tokens} tokens</div>`;
+        }
     }
 }
 
 function updateBidsList(bid) {
     const bidsList = document.getElementById('bids-list');
-    bidsList.innerHTML += `<div>${bid.team} bids ${bid.bid} points</div>`;
+    if (bidsList) {
+        const bidElement = document.createElement('div');
+        bidElement.textContent = `${bid.team} bids ${bid.bid} points`;
+        bidsList.appendChild(bidElement);
+    }
 }
 
 // Index page logic
@@ -39,6 +45,7 @@ if (window.location.pathname === '/') {
 
     socket.on('room_joined', (data) => {
         localStorage.setItem('team', data.team);
+        localStorage.setItem('room', data.room);
         window.location.href = `/team/${data.room}`;
     });
 }
@@ -125,9 +132,14 @@ if (window.location.pathname.startsWith('/team/')) {
     isQM = false;
     room = document.getElementById('room-code').textContent;
     team = localStorage.getItem('team');
-    document.getElementById('team-name').textContent = team;
 
-    socket.emit('join_room', { room: room, team: team });
+    if (team && room) {
+        document.getElementById('team-name').textContent = team;
+        socket.emit('join_room', { room: room, team: team });
+    } else {
+        alert('Error: Team or room information is missing');
+        window.location.href = '/';
+    }
 
     const bidButtons = document.querySelectorAll('.bid-amount');
     const customBidInput = document.getElementById('custom-bid');
@@ -158,12 +170,16 @@ if (window.location.pathname.startsWith('/team/')) {
 // Common logic for both QM and Team rooms
 socket.on('card_selected', (data) => {
     const selectedCardDiv = document.getElementById('selected-card');
-    selectedCardDiv.textContent = `Selected Card: ${data.card}`;
+    if (selectedCardDiv) {
+        selectedCardDiv.textContent = `Selected Card: ${data.card}`;
+    }
 });
 
 socket.on('timer_update', (data) => {
     const timerDisplay = document.getElementById('time-left');
-    timerDisplay.textContent = data.time;
+    if (timerDisplay) {
+        timerDisplay.textContent = data.time;
+    }
 });
 
 socket.on('timer_complete', () => {
@@ -178,18 +194,22 @@ socket.on('bid_placed', (data) => {
 
 socket.on('priority_list', (data) => {
     const priorityTable = document.getElementById('priority-table');
-    priorityTable.innerHTML = '<table><tr><th>Team</th><th>Bid</th><th>Priority</th></tr>';
-    data.bids.forEach((bid, index) => {
-        priorityTable.innerHTML += `<tr>
-            <td>${bid[0]}</td>
-            <td>${bid[1]}</td>
-            <td>${index + 1}</td>
-        </tr>`;
-    });
-    priorityTable.innerHTML += '</table>';
+    if (priorityTable) {
+        priorityTable.innerHTML = '<table><tr><th>Team</th><th>Bid</th><th>Priority</th></tr>';
+        data.bids.forEach((bid, index) => {
+            priorityTable.innerHTML += `<tr>
+                <td>${bid[0]}</td>
+                <td>${bid[1]}</td>
+                <td>${index + 1}</td>
+            </tr>`;
+        });
+        priorityTable.innerHTML += '</table>';
+    }
 
     const cardWorthDiv = document.getElementById('card-worth');
-    cardWorthDiv.textContent = `Card is worth ${data.card_worth} points`;
+    if (cardWorthDiv) {
+        cardWorthDiv.textContent = `Card is worth ${data.card_worth} points`;
+    }
 });
 
 socket.on('winner_assigned', (data) => {
@@ -198,11 +218,17 @@ socket.on('winner_assigned', (data) => {
 });
 
 socket.on('round_cleared', () => {
-    document.getElementById('selected-card').textContent = '';
-    document.getElementById('card-worth').textContent = '';
-    document.getElementById('bids-list').innerHTML = '';
-    document.getElementById('priority-table').innerHTML = '';
-    document.getElementById('time-left').textContent = '75';
+    const elements = ['selected-card', 'card-worth', 'bids-list', 'priority-table', 'time-left'];
+    elements.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            if (id === 'time-left') {
+                element.textContent = '75';
+            } else {
+                element.innerHTML = '';
+            }
+        }
+    });
 });
 
 socket.on('room_joined', (data) => {
@@ -211,4 +237,5 @@ socket.on('room_joined', (data) => {
 
 socket.on('error', (data) => {
     alert(data.message);
+    window.location.href = '/';
 });
