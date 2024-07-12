@@ -7,7 +7,8 @@ body {
 }
 
 .container {
-    width: 80%;
+    width: 95%;
+    max-width: 1200px;
     margin: auto;
     overflow: hidden;
     padding: 20px;
@@ -18,6 +19,7 @@ body {
     border: 1px solid #000;
     padding: 20px;
     margin-bottom: 20px;
+    border-radius: 5px;
 }
 
 .btn {
@@ -28,6 +30,11 @@ body {
     border-radius: 5px;
     font-size: 16px;
     margin: 5px;
+    transition: background-color 0.3s;
+}
+
+.btn:hover {
+    opacity: 0.8;
 }
 
 .btn-green {
@@ -49,6 +56,8 @@ input[type="text"], input[type="number"], select {
     width: 100%;
     padding: 10px;
     margin: 5px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
 }
 
 .divider {
@@ -69,10 +78,46 @@ input[type="text"], input[type="number"], select {
 table {
     width: 100%;
     border-collapse: collapse;
+    margin-top: 10px;
 }
 
 table, th, td {
     border: 1px solid black;
-    padding: 5px;
+    padding: 8px;
     text-align: left;
+}
+
+th {
+    background-color: #f2f2f2;
+}
+
+.flex-container {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+.flex-item {
+    flex: 1;
+    min-width: 250px;
+    margin: 10px;
+}
+
+@media (max-width: 768px) {
+    .flex-item {
+        flex-basis: 100%;
+    }
+}
+
+#winner-selection {
+    margin-top: 20px;
+}
+
+#winner-options {
+    margin-bottom: 10px;
+}
+
+#winner-options label {
+    display: block;
+    margin-bottom: 5px;
 }

@@ -1,8 +1,9 @@
-from flask import Flask, render_template, request, session
-from flask_socketio import SocketIO, join_room, leave_room, emit
+from flask import Flask, render_template, request
+from flask_socketio import SocketIO, join_room, emit
 import random
 import string
 import time
+import threading
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
@@ -13,16 +14,28 @@ rooms = {}
 def generate_room_code():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
 
+def timer_thread(room):
+    while rooms[room]['timer'] > 0:
+        socketio.sleep(1)
+        rooms[room]['timer'] -= 1
+        socketio.emit('timer_update', {'time': rooms[room]['timer']}, room=room)
+    socketio.emit('timer_complete', room=room)
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
 
 @app.route('/qm/<room>')
 def qm_room(room):
+    if room not in rooms:
+        return "Room not found", 404
     return render_template('qm_room.html', room=room)
 
 @app.route('/team/<room>')
 def team_room(room):
+    if room not in rooms:
+        return "Room not found", 404
     return render_template('team_room.html', room=room)
 
 @socketio.on('create_room')
@@ -32,12 +45,10 @@ def on_create_room():
         room = generate_room_code()
     rooms[room] = {
         'teams': {},
-        'cards': list(range(52)),  # Placeholder for card deck
         'current_card': None,
         'timer': 75,
         'bids': {},
-        'card_worth': 0,
-        'created_at': time.time()
+        'card_worth': 0
     }
     join_room(room)
     emit('room_created', {'room': room})
@@ -50,7 +61,7 @@ def on_join_room(data):
         if team not in rooms[room]['teams']:
             rooms[room]['teams'][team] = 300  # Initial tokens
         join_room(room)
-        emit('room_joined', {'team': team, 'tokens': rooms[room]['teams'][team]}, room=room)
+        emit('room_joined', {'team': team, 'tokens': rooms[room]['teams'][team], 'teams': rooms[room]['teams']}, room=room)
     else:
         emit('error', {'message': 'Room not found'})
 
@@ -64,34 +75,44 @@ def on_select_card(data):
         rooms[room]['card_worth'] = 0
         emit('card_selected', {'card': card}, room=room)
 
+def run_timer(room):
+    while rooms[room]['timer'] > 0:
+        socketio.sleep(1)
+        rooms[room]['timer'] -= 1
+        socketio.emit('timer_update', {'time': rooms[room]['timer']}, room=room)
+    socketio.emit('timer_complete', room=room)
+
 @socketio.on('start_timer')
 def on_start_timer(data):
     room = data['room']
     custom_time = data.get('custom_time', 75)
     if room in rooms:
         rooms[room]['timer'] = custom_time
+        timer_thread = threading.Thread(target=run_timer, args=(room,))
+        timer_thread.start()
         emit('timer_started', {'time': custom_time}, room=room)
-
 @socketio.on('place_bid')
 def on_place_bid(data):
     room = data['room']
     team = data['team']
     bid = data['bid']
-    timestamp = time.time()
     if room in rooms and team in rooms[room]['teams']:
         if rooms[room]['teams'][team] >= bid:
-            rooms[room]['bids'][team] = {'amount': bid, 'time': timestamp}
-            emit('bid_placed', {'team': team, 'bid': bid, 'timestamp': timestamp}, room=room)
+            rooms[room]['bids'][team] = bid
+            rooms[room]['teams'][team] -= bid
+            emit('bid_placed', {'team': team, 'bid': bid}, room=room)
         else:
             emit('error', {'message': 'Insufficient tokens'}, room=request.sid)
+
+
+
 
 @socketio.on('get_priority')
 def on_get_priority(data):
     room = data['room']
     if room in rooms:
-        valid_bids = {team: bid for team, bid in rooms[room]['bids'].items() if bid['time'] <= rooms[room]['timer']}
-        sorted_bids = sorted(valid_bids.items(), key=lambda x: (-x[1]['amount'], x[1]['time']))
-        rooms[room]['card_worth'] = sum(bid['amount'] for bid in valid_bids.values())
+        sorted_bids = sorted(rooms[room]['bids'].items(), key=lambda x: x[1], reverse=True)
+        rooms[room]['card_worth'] = sum(rooms[room]['bids'].values())
         emit('priority_list', {'bids': sorted_bids, 'card_worth': rooms[room]['card_worth']}, room=room)
 
 @socketio.on('assign_winner')
@@ -101,9 +122,6 @@ def on_assign_winner(data):
     if room in rooms:
         if winner != 'no_winner':
             rooms[room]['teams'][winner] += rooms[room]['card_worth']
-        for team, bid in rooms[room]['bids'].items():
-            if bid['time'] <= rooms[room]['timer']:
-                rooms[room]['teams'][team] -= bid['amount']
         emit('winner_assigned', {'winner': winner, 'card_worth': rooms[room]['card_worth'], 'teams': rooms[room]['teams']}, room=room)
 
 @socketio.on('clear_round')
@@ -116,7 +134,5 @@ def on_clear_round(data):
         rooms[room]['timer'] = 75
         emit('round_cleared', room=room)
 
-
-
 if __name__ == '__main__':
-    socketio.run(app, debug=True, allow_unsafe_werkzeug=True)
+    socketio.run(app, debug=True)

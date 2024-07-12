@@ -9,32 +9,40 @@
 <body>
     <div class="container">
         <h1>Quiz Room: <span id="room-code">{{ room }}</span></h1>
-        <div class="grey-box">
-            <div id="card-selection">
-                <select id="card-dropdown">
-                    <option value="">Select a card</option>
-                    <!-- Card options will be populated by JavaScript -->
-                </select>
-                <div id="selected-card"></div>
-                <div id="card-worth"></div>
+        <div class="flex-container">
+            <div class="flex-item grey-box">
+                <div id="card-selection">
+                    <select id="card-dropdown">
+                        <option value="">Select a card</option>
+                    </select>
+                    <div id="selected-card"></div>
+                    <div id="card-worth"></div>
+                </div>
+                <div id="timer">
+                    <input type="number" id="custom-time" value="75" min="1">
+                    <button id="start-timer" class="btn btn-blue">Start Timer</button>
+                    <span id="time-left">75</span> secs left
+                </div>
             </div>
-            <div id="timer">
-                <input type="number" id="custom-time" value="75" min="1">
-                <button id="start-timer" class="btn btn-blue">Start Timer</button>
-                <span id="time-left">75</span> secs left
+            <div class="flex-item grey-box">
+                <h2>Teams</h2>
+                <div id="teams-list"></div>
+            </div>
+            <div class="flex-item grey-box">
+                <h2>Bids</h2>
+                <div id="bids-list"></div>
             </div>
         </div>
-        <div class="grey-box">
-            <h2>Teams</h2>
-            <div id="teams-list"></div>
-        </div>
-        <div class="grey-box">
-            <h2>Bids</h2>
-            <div id="bids-list"></div>
-        </div>
-        <div class="grey-box">
-            <h2>Priority Table</h2>
-            <div id="priority-table"></div>
+        <div class="flex-container">
+            <div class="flex-item grey-box">
+                <h2>Priority Table</h2>
+                <div id="priority-table"></div>
+            </div>
+            <div class="flex-item grey-box" id="winner-selection" style="display: none;">
+                <h2>Select Winner</h2>
+                <div id="winner-options"></div>
+                <button id="confirm-winner" class="btn btn-green">Confirm Winner</button>
+            </div>
         </div>
         <button id="get-priority" class="btn btn-blue">Get Priority</button>
         <button id="assign-winner" class="btn btn-green">Assign Winner</button>

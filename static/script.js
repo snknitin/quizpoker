@@ -1,7 +1,6 @@
 const socket = io();
 let room, team, isQM;
 
-// Helper function to update the teams list
 function updateTeamsList(teams) {
     const teamsList = document.getElementById('teams-list');
     teamsList.innerHTML = '';
@@ -10,15 +9,9 @@ function updateTeamsList(teams) {
     }
 }
 
-// Helper function to update the bids list
 function updateBidsList(bid) {
     const bidsList = document.getElementById('bids-list');
-    const bidElement = document.createElement('div');
-    bidElement.textContent = `${bid.team} bids ${bid.bid} points`;
-    if (bid.timestamp > rooms[room].timer) {
-        bidElement.classList.add('late-bid');
-    }
-    bidsList.appendChild(bidElement);
+    bidsList.innerHTML += `<div>${bid.team} bids ${bid.bid} points</div>`;
 }
 
 // Index page logic
@@ -45,6 +38,7 @@ if (window.location.pathname === '/') {
     });
 
     socket.on('room_joined', (data) => {
+        localStorage.setItem('team', data.team);
         window.location.href = `/team/${data.room}`;
     });
 }
@@ -59,6 +53,9 @@ if (window.location.pathname.startsWith('/qm/')) {
     const getPriorityBtn = document.getElementById('get-priority');
     const assignWinnerBtn = document.getElementById('assign-winner');
     const clearRoundBtn = document.getElementById('clear-round');
+    const winnerSelection = document.getElementById('winner-selection');
+    const winnerOptions = document.getElementById('winner-options');
+    const confirmWinnerBtn = document.getElementById('confirm-winner');
 
     // Populate card dropdown
     const suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades'];
@@ -80,7 +77,7 @@ if (window.location.pathname.startsWith('/qm/')) {
     });
 
     startTimerBtn.addEventListener('click', () => {
-        const customTime = parseInt(document.getElementById('custom-time').value);
+        const customTime = parseInt(document.getElementById('custom-time').value) || 75;
         socket.emit('start_timer', { room, custom_time: customTime });
     });
 
@@ -89,9 +86,32 @@ if (window.location.pathname.startsWith('/qm/')) {
     });
 
     assignWinnerBtn.addEventListener('click', () => {
-        const winner = prompt('Enter the winning team name (or "no_winner" if no winner):');
-        if (winner) {
-            socket.emit('assign_winner', { room, winner });
+        winnerSelection.style.display = 'block';
+        winnerOptions.innerHTML = '';
+        const teams = Array.from(document.querySelectorAll('#teams-list div')).map(div => div.textContent.split(':')[0].trim());
+        teams.forEach(team => {
+            winnerOptions.innerHTML += `
+                <label>
+                    <input type="radio" name="winner" value="${team}">
+                    ${team}
+                </label><br>
+            `;
+        });
+        winnerOptions.innerHTML += `
+            <label>
+                <input type="radio" name="winner" value="no_winner">
+                No Winner
+            </label>
+        `;
+    });
+
+    confirmWinnerBtn.addEventListener('click', () => {
+        const selectedWinner = document.querySelector('input[name="winner"]:checked');
+        if (selectedWinner) {
+            socket.emit('assign_winner', { room, winner: selectedWinner.value });
+            winnerSelection.style.display = 'none';
+        } else {
+            alert('Please select a winner');
         }
     });
 
@@ -104,7 +124,10 @@ if (window.location.pathname.startsWith('/qm/')) {
 if (window.location.pathname.startsWith('/team/')) {
     isQM = false;
     room = document.getElementById('room-code').textContent;
-    team = document.getElementById('team-name').textContent;
+    team = localStorage.getItem('team');
+    document.getElementById('team-name').textContent = team;
+
+    socket.emit('join_room', { room: room, team: team });
 
     const bidButtons = document.querySelectorAll('.bid-amount');
     const customBidInput = document.getElementById('custom-bid');
@@ -136,22 +159,17 @@ if (window.location.pathname.startsWith('/team/')) {
 socket.on('card_selected', (data) => {
     const selectedCardDiv = document.getElementById('selected-card');
     selectedCardDiv.textContent = `Selected Card: ${data.card}`;
-    // You can add code here to display the card image
 });
 
-socket.on('timer_started', (data) => {
-    let timeLeft = data.time;
+socket.on('timer_update', (data) => {
     const timerDisplay = document.getElementById('time-left');
-    const timerInterval = setInterval(() => {
-        timeLeft--;
-        timerDisplay.textContent = timeLeft;
-        if (timeLeft <= 0) {
-            clearInterval(timerInterval);
-            if (isQM) {
-                socket.emit('get_priority', { room });
-            }
-        }
-    }, 1000);
+    timerDisplay.textContent = data.time;
+});
+
+socket.on('timer_complete', () => {
+    if (isQM) {
+        socket.emit('get_priority', { room });
+    }
 });
 
 socket.on('bid_placed', (data) => {
@@ -160,12 +178,11 @@ socket.on('bid_placed', (data) => {
 
 socket.on('priority_list', (data) => {
     const priorityTable = document.getElementById('priority-table');
-    priorityTable.innerHTML = '<table><tr><th>Team</th><th>Bid</th><th>Time</th><th>Priority</th></tr>';
+    priorityTable.innerHTML = '<table><tr><th>Team</th><th>Bid</th><th>Priority</th></tr>';
     data.bids.forEach((bid, index) => {
         priorityTable.innerHTML += `<tr>
             <td>${bid[0]}</td>
-            <td>${bid[1].amount}</td>
-            <td>${bid[1].time.toFixed(2)}</td>
+            <td>${bid[1]}</td>
             <td>${index + 1}</td>
         </tr>`;
     });
@@ -186,6 +203,10 @@ socket.on('round_cleared', () => {
     document.getElementById('bids-list').innerHTML = '';
     document.getElementById('priority-table').innerHTML = '';
     document.getElementById('time-left').textContent = '75';
+});
+
+socket.on('room_joined', (data) => {
+    updateTeamsList(data.teams);
 });
 
 socket.on('error', (data) => {
