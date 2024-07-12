@@ -1,6 +1,15 @@
 const socket = io();
 let room, team, isQM;
 
+
+// Add this function at the beginning of the file
+function emitGetTeams() {
+    if (room) {
+        socket.emit('get_teams', { room: room });
+    }
+}
+
+// Modify the updateTeamsList function
 function updateTeamsList(teams) {
     const teamsList = document.getElementById('teams-list');
     if (teamsList) {
@@ -8,6 +17,26 @@ function updateTeamsList(teams) {
         for (const [teamName, tokens] of Object.entries(teams)) {
             teamsList.innerHTML += `<div>${teamName}: ${tokens} tokens</div>`;
         }
+    }
+
+    // Update winner selection options
+    const winnerOptions = document.getElementById('winner-options');
+    if (winnerOptions) {
+        winnerOptions.innerHTML = '';
+        Object.keys(teams).forEach(team => {
+            winnerOptions.innerHTML += `
+                <label>
+                    <input type="radio" name="winner" value="${team}">
+                    ${team}
+                </label><br>
+            `;
+        });
+        winnerOptions.innerHTML += `
+            <label>
+                <input type="radio" name="winner" value="no_winner">
+                No Winner
+            </label>
+        `;
     }
 }
 
@@ -64,6 +93,8 @@ if (window.location.pathname.startsWith('/qm/')) {
     const winnerOptions = document.getElementById('winner-options');
     const confirmWinnerBtn = document.getElementById('confirm-winner');
 
+    setInterval(emitGetTeams, 5000);  // Update every 5 seconds
+
     // Populate card dropdown
     const suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades'];
     const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace'];
@@ -88,9 +119,18 @@ if (window.location.pathname.startsWith('/qm/')) {
         socket.emit('start_timer', { room, custom_time: customTime });
     });
 
-    getPriorityBtn.addEventListener('click', () => {
-        socket.emit('get_priority', { room });
+    socket.on('timer_started', (data) => {
+        const timerDisplay = document.getElementById('time-left');
+        if (timerDisplay) {
+            timerDisplay.textContent = data.time;
+        }
     });
+
+    if (getPriorityBtn) {
+        getPriorityBtn.addEventListener('click', () => {
+            socket.emit('get_priority', { room });
+        });
+    }
 
     assignWinnerBtn.addEventListener('click', () => {
         winnerSelection.style.display = 'block';
@@ -233,9 +273,17 @@ socket.on('round_cleared', () => {
 
 socket.on('room_joined', (data) => {
     updateTeamsList(data.teams);
+    if (isQM) {
+        emitGetTeams();
+    }
 });
 
 socket.on('error', (data) => {
     alert(data.message);
     window.location.href = '/';
+});
+
+// Add a new event listener for updating teams
+socket.on('teams_updated', (data) => {
+    updateTeamsList(data.teams);
 });

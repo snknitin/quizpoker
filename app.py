@@ -62,9 +62,16 @@ def on_join_room(data):
             rooms[room]['teams'][team] = 300  # Initial tokens
         join_room(room)
         emit('room_joined', {'room': room, 'team': team, 'tokens': rooms[room]['teams'][team], 'teams': rooms[room]['teams']}, room=room)
+        emit('teams_updated', {'teams': rooms[room]['teams']}, room=room)
     else:
         emit('error', {'message': 'Room not found'})
 
+
+@socketio.on('get_teams')
+def on_get_teams(data):
+    room = data['room']
+    if room in rooms:
+        emit('teams_updated', {'teams': rooms[room]['teams']}, room=room)
 
 @socketio.on('select_card')
 def on_select_card(data):
@@ -82,6 +89,8 @@ def run_timer(room):
         rooms[room]['timer'] -= 1
         socketio.emit('timer_update', {'time': rooms[room]['timer']}, room=room)
     socketio.emit('timer_complete', room=room)
+    socketio.emit('get_priority', {'room': room}, room=room)
+
 
 @socketio.on('start_timer')
 def on_start_timer(data):
@@ -92,6 +101,8 @@ def on_start_timer(data):
         timer_thread = threading.Thread(target=run_timer, args=(room,))
         timer_thread.start()
         emit('timer_started', {'time': custom_time}, room=room)
+
+
 @socketio.on('place_bid')
 def on_place_bid(data):
     room = data['room']
@@ -102,6 +113,7 @@ def on_place_bid(data):
             rooms[room]['bids'][team] = bid
             rooms[room]['teams'][team] -= bid
             emit('bid_placed', {'team': team, 'bid': bid}, room=room)
+            emit('teams_updated', {'teams': rooms[room]['teams']}, room=room)
         else:
             emit('error', {'message': 'Insufficient tokens'}, room=request.sid)
 
