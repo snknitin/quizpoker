@@ -66,6 +66,17 @@ def on_join_room(data):
     else:
         emit('error', {'message': 'Room not found'})
 
+@socketio.on('get_initial_data')
+def on_get_initial_data(data):
+    room = data['room']
+    if room in rooms:
+        emit('initial_data', {
+            'teams': rooms[room]['teams'],
+            'bids': rooms[room]['bids'],
+            'timer': rooms[room]['timer'],
+            'current_card': rooms[room]['current_card'],
+            'card_worth': rooms[room]['card_worth']
+        })
 
 @socketio.on('get_teams')
 def on_get_teams(data):
@@ -114,6 +125,7 @@ def on_place_bid(data):
             rooms[room]['teams'][team] -= bid
             emit('bid_placed', {'team': team, 'bid': bid}, room=room)
             emit('teams_updated', {'teams': rooms[room]['teams']}, room=room)
+            emit('bids_updated', {'bids': rooms[room]['bids']}, room=room)
         else:
             emit('error', {'message': 'Insufficient tokens'}, room=request.sid)
 
@@ -137,6 +149,7 @@ def on_assign_winner(data):
             rooms[room]['teams'][winner] += rooms[room]['card_worth']
         emit('winner_assigned', {'winner': winner, 'card_worth': rooms[room]['card_worth'], 'teams': rooms[room]['teams']}, room=room)
 
+
 @socketio.on('clear_round')
 def on_clear_round(data):
     room = data['room']
@@ -146,6 +159,8 @@ def on_clear_round(data):
         rooms[room]['card_worth'] = 0
         rooms[room]['timer'] = 75
         emit('round_cleared', room=room)
+        emit('teams_updated', {'teams': rooms[room]['teams']}, room=room)
+        emit('bids_updated', {'bids': rooms[room]['bids']}, room=room)
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)

@@ -40,12 +40,16 @@ function updateTeamsList(teams) {
     }
 }
 
-function updateBidsList(bid) {
+// Modify the updateBidsList function
+function updateBidsList(bids) {
     const bidsList = document.getElementById('bids-list');
     if (bidsList) {
-        const bidElement = document.createElement('div');
-        bidElement.textContent = `${bid.team} bids ${bid.bid} points`;
-        bidsList.appendChild(bidElement);
+        bidsList.innerHTML = '';
+        for (const [team, bid] of Object.entries(bids)) {
+            const bidElement = document.createElement('div');
+            bidElement.textContent = `${team} bids ${bid} points`;
+            bidsList.appendChild(bidElement);
+        }
     }
 }
 
@@ -93,6 +97,8 @@ if (window.location.pathname.startsWith('/qm/')) {
     const winnerOptions = document.getElementById('winner-options');
     const confirmWinnerBtn = document.getElementById('confirm-winner');
 
+    // Immediately request teams list when QM room loads
+    socket.emit('get_teams', { room });
     setInterval(emitGetTeams, 5000);  // Update every 5 seconds
 
     // Populate card dropdown
@@ -119,6 +125,10 @@ if (window.location.pathname.startsWith('/qm/')) {
         socket.emit('start_timer', { room, custom_time: customTime });
     });
 
+    // Immediately request initial data when QM room loads
+    socket.emit('get_initial_data', { room });
+
+    // Update the timer display when timer is started
     socket.on('timer_started', (data) => {
         const timerDisplay = document.getElementById('time-left');
         if (timerDisplay) {
@@ -271,12 +281,25 @@ socket.on('round_cleared', () => {
     });
 });
 
+// Modify the existing 'room_joined' event listener
 socket.on('room_joined', (data) => {
     updateTeamsList(data.teams);
     if (isQM) {
-        emitGetTeams();
+        socket.emit('get_initial_data', { room });
     }
 });
+
+
+// Add a new event listener for initial data
+socket.on('initial_data', (data) => {
+    updateTeamsList(data.teams);
+    updateBidsList(data.bids);
+    const timerDisplay = document.getElementById('time-left');
+    if (timerDisplay) {
+        timerDisplay.textContent = data.timer;
+    }
+});
+
 
 socket.on('error', (data) => {
     alert(data.message);
