@@ -109,6 +109,7 @@ def on_start_timer(data):
     custom_time = data.get('custom_time', 75)
     if room in rooms:
         rooms[room]['timer'] = custom_time
+        rooms[room]['timer_start'] = time.time()
         timer_thread = threading.Thread(target=run_timer, args=(room,))
         timer_thread.start()
         emit('timer_started', {'time': custom_time}, room=room)
@@ -121,11 +122,8 @@ def on_place_bid(data):
     bid = data['bid']
     if room in rooms and team in rooms[room]['teams']:
         if rooms[room]['teams'][team] >= bid:
-            rooms[room]['bids'][team] = bid
-            rooms[room]['teams'][team] -= bid
-            emit('bid_placed', {'team': team, 'bid': bid}, room=room)
-            emit('teams_updated', {'teams': rooms[room]['teams']}, room=room)
-            emit('bids_updated', {'bids': rooms[room]['bids']}, room=room)
+            rooms[room]['bids'][team] = {'amount': bid, 'time': time.time() - rooms[room]['timer_start']}
+            emit('bid_placed', {'team': team, 'bid': bid, 'time': rooms[room]['bids'][team]['time']}, room=room)
         else:
             emit('error', {'message': 'Insufficient tokens'}, room=request.sid)
 
@@ -136,15 +134,22 @@ def on_place_bid(data):
 def on_get_priority(data):
     room = data['room']
     if room in rooms:
-        sorted_bids = sorted(rooms[room]['bids'].items(), key=lambda x: x[1], reverse=True)
-        rooms[room]['card_worth'] = sum(rooms[room]['bids'].values())
-        emit('priority_list', {'bids': sorted_bids, 'card_worth': rooms[room]['card_worth']}, room=room)
+        sorted_bids = sorted(rooms[room]['bids'].items(), key=lambda x: (-x[1]['amount'], x[1]['time']))
+        rooms[room]['card_worth'] = sum(bid['amount'] for bid in rooms[room]['bids'].values())
+        emit('priority_list', {
+            'bids': [{'team': team, 'amount': bid['amount'], 'time': bid['time']} for team, bid in sorted_bids],
+            'card_worth': rooms[room]['card_worth']
+        }, room=room)
+
+
 
 @socketio.on('assign_winner')
 def on_assign_winner(data):
     room = data['room']
     winner = data['winner']
     if room in rooms:
+        for team, bid_data in rooms[room]['bids'].items():
+            rooms[room]['teams'][team] -= bid_data['amount']
         if winner != 'no_winner':
             rooms[room]['teams'][winner] += rooms[room]['card_worth']
         emit('winner_assigned', {'winner': winner, 'card_worth': rooms[room]['card_worth'], 'teams': rooms[room]['teams']}, room=room)

@@ -40,16 +40,12 @@ function updateTeamsList(teams) {
     }
 }
 
-// Modify the updateBidsList function
-function updateBidsList(bids) {
+function updateBidsList(bid) {
     const bidsList = document.getElementById('bids-list');
     if (bidsList) {
-        bidsList.innerHTML = '';
-        for (const [team, bid] of Object.entries(bids)) {
-            const bidElement = document.createElement('div');
-            bidElement.textContent = `${team} bids ${bid} points`;
-            bidsList.appendChild(bidElement);
-        }
+        const bidElement = document.createElement('div');
+        bidElement.textContent = `${bid.team} bids ${bid.bid} points (${bid.time.toFixed(2)}s)`;
+        bidsList.appendChild(bidElement);
     }
 }
 
@@ -99,7 +95,7 @@ if (window.location.pathname.startsWith('/qm/')) {
 
     // Immediately request teams list when QM room loads
     socket.emit('get_teams', { room });
-    setInterval(emitGetTeams, 5000);  // Update every 5 seconds
+//    setInterval(emitGetTeams, 5000);  // Update every 5 seconds
 
     // Populate card dropdown
     const suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades'];
@@ -134,6 +130,10 @@ if (window.location.pathname.startsWith('/qm/')) {
         if (timerDisplay) {
             timerDisplay.textContent = data.time;
         }
+    });
+
+    socket.on('bid_placed', (data) => {
+        updateBidsList(data);
     });
 
     if (getPriorityBtn) {
@@ -243,17 +243,19 @@ socket.on('bid_placed', (data) => {
 });
 
 socket.on('priority_list', (data) => {
-    const priorityTable = document.getElementById('priority-table');
-    if (priorityTable) {
-        priorityTable.innerHTML = '<table><tr><th>Team</th><th>Bid</th><th>Priority</th></tr>';
+    const priorityTableBody = document.getElementById('priority-table-body');
+    if (priorityTableBody) {
+        priorityTableBody.innerHTML = '';
         data.bids.forEach((bid, index) => {
-            priorityTable.innerHTML += `<tr>
-                <td>${bid[0]}</td>
-                <td>${bid[1]}</td>
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${bid.team}</td>
+                <td>${bid.amount}</td>
+                <td>${bid.time.toFixed(2)}s</td>
                 <td>${index + 1}</td>
-            </tr>`;
+            `;
+            priorityTableBody.appendChild(row);
         });
-        priorityTable.innerHTML += '</table>';
     }
 
     const cardWorthDiv = document.getElementById('card-worth');
