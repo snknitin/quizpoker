@@ -82,7 +82,9 @@ if (window.location.pathname === '/') {
 // QM Room logic
 if (window.location.pathname.startsWith('/qm/')) {
     isQM = true;
+    console.log('QM Room script section entered');
     room = document.getElementById('room-code').textContent;
+    console.log('Room code:', room);
 
     const cardDropdown = document.getElementById('card-dropdown');
     const startTimerBtn = document.getElementById('start-timer');
@@ -137,9 +139,25 @@ if (window.location.pathname.startsWith('/qm/')) {
     });
 
     if (getPriorityBtn) {
+        console.log('Get Priority button found');
         getPriorityBtn.addEventListener('click', () => {
-            socket.emit('get_priority', { room });
+            console.log('Get Priority button clicked, emitting get_priority event');
+            socket.emit('get_priority', { room: room });
         });
+    } else {
+        console.error('Get Priority button not found');
+    }
+
+     // Force visibility of priority table
+    const priorityTable = document.getElementById('priority-table');
+    if (priorityTable) {
+        priorityTable.style.display = 'block';
+        priorityTable.style.visibility = 'visible';
+        priorityTable.style.opacity = '1';
+        priorityTable.style.border = '1px solid black';
+        priorityTable.style.padding = '10px';
+        priorityTable.style.margin = '10px 0';
+        priorityTable.textContent = 'Priority table will appear here.';
     }
 
     assignWinnerBtn.addEventListener('click', () => {
@@ -242,25 +260,40 @@ socket.on('bid_placed', (data) => {
     updateBidsList(data);
 });
 
+// Update the priority_list event listener
 socket.on('priority_list', (data) => {
-    const priorityTableBody = document.getElementById('priority-table-body');
-    if (priorityTableBody) {
-        priorityTableBody.innerHTML = '';
-        data.bids.forEach((bid, index) => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${bid.team}</td>
-                <td>${bid.amount}</td>
-                <td>${bid.time.toFixed(2)}s</td>
-                <td>${index + 1}</td>
-            `;
-            priorityTableBody.appendChild(row);
-        });
+    console.log('Received priority_list event:', data);
+
+    const priorityTable = document.getElementById('priority-table');
+    if (priorityTable) {
+        try {
+            let tableHTML = '<table><tr><th>Team</th><th>Bid</th><th>Time</th><th>Priority</th></tr>';
+            data.bids.forEach((bid, index) => {
+                tableHTML += `<tr>
+                    <td>${bid.team}</td>
+                    <td>${bid.amount}</td>
+                    <td>${bid.time.toFixed(2)}s</td>
+                    <td>${index + 1}</td>
+                </tr>`;
+            });
+            tableHTML += '</table>';
+            priorityTable.innerHTML = tableHTML;
+            console.log('Priority table updated');
+        } catch (error) {
+            console.error('Error updating priority table:', error);
+            console.error('Error details:', error.message);
+            console.error('Data received:', JSON.stringify(data));
+        }
+    } else {
+        console.error('Priority table element not found');
     }
 
     const cardWorthDiv = document.getElementById('card-worth');
     if (cardWorthDiv) {
         cardWorthDiv.textContent = `Card is worth ${data.card_worth} points`;
+        console.log('Card worth updated');
+    } else {
+        console.error('Card worth element not found');
     }
 });
 
@@ -311,4 +344,14 @@ socket.on('error', (data) => {
 // Add a new event listener for updating teams
 socket.on('teams_updated', (data) => {
     updateTeamsList(data.teams);
+});
+
+
+// Add this at the end of the file
+socket.on('connect', () => {
+    console.log('Socket connected');
+});
+
+socket.on('disconnect', () => {
+    console.log('Socket disconnected');
 });

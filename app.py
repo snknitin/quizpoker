@@ -134,13 +134,17 @@ def on_place_bid(data):
 def on_get_priority(data):
     room = data['room']
     if room in rooms:
+        print(f"Getting priority for room: {room}")  # Debug print
         sorted_bids = sorted(rooms[room]['bids'].items(), key=lambda x: (-x[1]['amount'], x[1]['time']))
         rooms[room]['card_worth'] = sum(bid['amount'] for bid in rooms[room]['bids'].values())
+        print(f"Sorted bids: {sorted_bids}")  # Debug print
+        print(f"Card worth: {rooms[room]['card_worth']}")  # Debug print
         emit('priority_list', {
             'bids': [{'team': team, 'amount': bid['amount'], 'time': bid['time']} for team, bid in sorted_bids],
             'card_worth': rooms[room]['card_worth']
         }, room=room)
-
+    else:
+        print(f"Room {room} not found")  # Debug print
 
 
 @socketio.on('assign_winner')
