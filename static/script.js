@@ -94,6 +94,8 @@ if (window.location.pathname.startsWith('/qm/')) {
     const winnerSelection = document.getElementById('winner-selection');
     const winnerOptions = document.getElementById('winner-options');
     const confirmWinnerBtn = document.getElementById('confirm-winner');
+    // Log the state of the priority table
+    const priorityTable = document.getElementById('priority-table');
 
     // Immediately request teams list when QM room loads
     socket.emit('get_teams', { room });
@@ -148,17 +150,21 @@ if (window.location.pathname.startsWith('/qm/')) {
         console.error('Get Priority button not found');
     }
 
-     // Force visibility of priority table
-    const priorityTable = document.getElementById('priority-table');
     if (priorityTable) {
-        priorityTable.style.display = 'block';
-        priorityTable.style.visibility = 'visible';
-        priorityTable.style.opacity = '1';
-        priorityTable.style.border = '1px solid black';
-        priorityTable.style.padding = '10px';
-        priorityTable.style.margin = '10px 0';
-        priorityTable.textContent = 'Priority table will appear here.';
+        console.log('Priority table initial state:', priorityTable.innerHTML);
+    } else {
+        console.error('Priority table not found in initial state');
     }
+
+//    if (priorityTable) {
+//        priorityTable.style.display = 'block';
+//        priorityTable.style.visibility = 'visible';
+//        priorityTable.style.opacity = '1';
+//        priorityTable.style.border = '1px solid black';
+//        priorityTable.style.padding = '10px';
+//        priorityTable.style.margin = '10px 0';
+//        priorityTable.textContent = 'Priority table will appear here.';
+//    }
 
     assignWinnerBtn.addEventListener('click', () => {
         winnerSelection.style.display = 'block';
@@ -267,21 +273,52 @@ socket.on('priority_list', (data) => {
     const priorityTable = document.getElementById('priority-table');
     if (priorityTable) {
         try {
-            let tableHTML = '<table><tr><th>Team</th><th>Bid</th><th>Time</th><th>Priority</th></tr>';
-            data.bids.forEach((bid, index) => {
-                tableHTML += `<tr>
-                    <td>${bid.team}</td>
-                    <td>${bid.amount}</td>
-                    <td>${bid.time.toFixed(2)}s</td>
-                    <td>${index + 1}</td>
-                </tr>`;
+            console.log('Priority table div found');
+
+            // Clear existing content
+            priorityTable.innerHTML = '';
+            console.log('Cleared existing content');
+
+            // Create table element
+            const table = document.createElement('table');
+            table.style.width = '100%';
+            table.style.borderCollapse = 'collapse';
+            console.log('Created table element');
+
+            // Create header
+            const header = table.createTHead();
+            const headerRow = header.insertRow();
+            ['Team', 'Bid', 'Time', 'Priority'].forEach(text => {
+                const th = document.createElement('th');
+                th.textContent = text;
+                th.style.border = '1px solid black';
+                th.style.padding = '5px';
+                headerRow.appendChild(th);
             });
-            tableHTML += '</table>';
-            priorityTable.innerHTML = tableHTML;
-            console.log('Priority table updated');
+            console.log('Created table header');
+
+            // Create body
+            const body = table.createTBody();
+            data.bids.forEach((bid, index) => {
+                const row = body.insertRow();
+                [bid.team, bid.amount, `${bid.time.toFixed(2)}s`, index + 1].forEach(text => {
+                    const cell = row.insertCell();
+                    cell.textContent = text;
+                    cell.style.border = '1px solid black';
+                    cell.style.padding = '5px';
+                });
+            });
+            console.log('Created table body');
+
+            // Append table to priority-table div
+            priorityTable.appendChild(table);
+            console.log('Appended table to priority-table div');
+
+            console.log('Priority table updated successfully');
         } catch (error) {
             console.error('Error updating priority table:', error);
             console.error('Error details:', error.message);
+            console.error('Error stack:', error.stack);
             console.error('Data received:', JSON.stringify(data));
         }
     } else {
