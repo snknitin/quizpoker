@@ -63,6 +63,8 @@ def on_join_room(data):
         join_room(room)
         emit('room_joined', {'room': room, 'team': team, 'tokens': rooms[room]['teams'][team], 'teams': rooms[room]['teams']}, room=room)
         emit('teams_updated', {'teams': rooms[room]['teams']}, room=room)
+        emit('bids_updated', {'bids': rooms[room]['bids']}, room=room)
+        emit('timer_update', {'time': rooms[room]['timer']}, room=room)
     else:
         emit('error', {'message': 'Room not found'})
 
@@ -100,7 +102,8 @@ def run_timer(room):
         rooms[room]['timer'] -= 1
         socketio.emit('timer_update', {'time': rooms[room]['timer']}, room=room)
     socketio.emit('timer_complete', room=room)
-    socketio.emit('get_priority', {'room': room}, room=room)
+    socketio.emit('pounce_closed', room=room)
+    # socketio.emit('get_priority', {'room': room}, room=room)
 
 
 @socketio.on('start_timer')
@@ -114,7 +117,6 @@ def on_start_timer(data):
         timer_thread.start()
         emit('timer_started', {'time': custom_time}, room=room)
 
-
 @socketio.on('place_bid')
 def on_place_bid(data):
     room = data['room']
@@ -124,27 +126,31 @@ def on_place_bid(data):
         if rooms[room]['teams'][team] >= bid:
             rooms[room]['bids'][team] = {'amount': bid, 'time': time.time() - rooms[room]['timer_start']}
             emit('bid_placed', {'team': team, 'bid': bid, 'time': rooms[room]['bids'][team]['time']}, room=room)
+            emit('bids_updated', {'bids': rooms[room]['bids']}, room=room)
         else:
             emit('error', {'message': 'Insufficient tokens'}, room=request.sid)
-
-
-
 
 @socketio.on('get_priority')
 def on_get_priority(data):
     room = data['room']
     if room in rooms:
-        print(f"Getting priority for room: {room}")  # Debug print
+        print(f"Getting priority for room: {room}")
         sorted_bids = sorted(rooms[room]['bids'].items(), key=lambda x: (-x[1]['amount'], x[1]['time']))
         rooms[room]['card_worth'] = sum(bid['amount'] for bid in rooms[room]['bids'].values())
-        print(f"Sorted bids: {sorted_bids}")  # Debug print
-        print(f"Card worth: {rooms[room]['card_worth']}")  # Debug print
-        emit('priority_list', {
+        print(f"Sorted bids: {sorted_bids}")
+        print(f"Card worth: {rooms[room]['card_worth']}")
+
+        priority_data = {
             'bids': [{'team': team, 'amount': bid['amount'], 'time': bid['time']} for team, bid in sorted_bids],
             'card_worth': rooms[room]['card_worth']
-        }, room=room)
+        }
+        print(f"Emitting priority_list: {priority_data}")
+        emit('priority_list', priority_data, room=room,
+             callback=lambda: print("priority_list event received by client"))
+        return {"status": "success", "message": "Priority data sent"}
     else:
-        print(f"Room {room} not found")  # Debug print
+        print(f"Room {room} not found")
+        return {"status": "error", "message": "Room not found"}
 
 
 @socketio.on('assign_winner')
