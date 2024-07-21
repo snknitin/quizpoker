@@ -5,13 +5,24 @@ const socket = io({
     reconnectionDelayMax : 5000,
     reconnectionAttempts: Infinity
 });
-let room, team, isQM;
+let room, team;
+
+// At the beginning of the file, add:
+let isQM = false;
 
 
 // Add this function at the beginning of the file
 function emitGetTeams() {
     if (room) {
         socket.emit('get_teams', { room: room });
+    }
+}
+
+
+function refreshQMRoom() {
+    if (isQM) {
+        console.log('Refreshing QM room data');
+        socket.emit('get_room_data', { room: room });
     }
 }
 
@@ -52,7 +63,7 @@ function updateBidsList(bids) {
     console.log('Updating bids list:', bids);
     const bidsList = document.getElementById('bids-list');
     if (bidsList) {
-        bidsList.innerHTML = '';
+//        bidsList.innerHTML = '';
         for (const [team, bidData] of Object.entries(bids)) {
             const bidElement = document.createElement('div');
             bidElement.textContent = `${team} bids ${bidData.amount} points (${bidData.time.toFixed(2)}s)`;
@@ -110,6 +121,7 @@ if (window.location.pathname.startsWith('/qm/')) {
 
     // Immediately request teams list when QM room loads
     socket.emit('get_teams', { room });
+    setInterval(refreshQMRoom, 3000); // Refresh every 3 seconds
 //    setInterval(emitGetTeams, 5000);  // Update every 5 seconds
 
     // Populate card dropdown
@@ -386,6 +398,19 @@ socket.on('round_cleared', () => {
             }
         }
     });
+});
+
+
+
+// Add this event listener
+socket.on('room_data', (data) => {
+    console.log('Received room data:', data);
+    updateTeamsList(data.teams);
+    updateBidsList(data.bids);
+    const timerDisplay = document.getElementById('time-left');
+    if (timerDisplay) {
+        timerDisplay.textContent = data.timer;
+    }
 });
 
 // Modify the existing 'room_joined' event listener

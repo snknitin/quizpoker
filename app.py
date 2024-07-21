@@ -52,6 +52,14 @@ def on_create_room():
     }
     join_room(room)
     emit('room_created', {'room': room})
+    # Immediately send initial data to the QM
+    emit('initial_data', {
+        'teams': rooms[room]['teams'],
+        'bids': rooms[room]['bids'],
+        'timer': rooms[room]['timer'],
+        'current_card': rooms[room]['current_card'],
+        'card_worth': rooms[room]['card_worth']
+    })
 
 @socketio.on('join_room')
 def on_join_room(data):
@@ -61,12 +69,15 @@ def on_join_room(data):
         if team not in rooms[room]['teams']:
             rooms[room]['teams'][team] = 300  # Initial tokens
         join_room(room)
-        emit('room_joined', {'room': room, 'team': team, 'tokens': rooms[room]['teams'][team], 'teams': rooms[room]['teams']}, room=room)
+        # Emit to the specific client that just joined
+        emit('room_joined', {'room': room, 'team': team, 'tokens': rooms[room]['teams'][team]})
+        # Emit to all clients in the room, including QM
         emit('teams_updated', {'teams': rooms[room]['teams']}, room=room)
         emit('bids_updated', {'bids': rooms[room]['bids']}, room=room)
         emit('timer_update', {'time': rooms[room]['timer']}, room=room)
     else:
         emit('error', {'message': 'Room not found'})
+
 
 @socketio.on('get_initial_data')
 def on_get_initial_data(data):
